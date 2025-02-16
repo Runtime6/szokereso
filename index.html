@@ -29,29 +29,32 @@
         #timer { font-size: 24px; font-weight: bold; margin-top: 10px; }
         .controls { display: flex; align-items: center; margin-top: 10px; gap: 10px; }
         button { padding: 5px 10px; font-size: 16px; cursor: pointer; }
+        #newGameButton { background-color: red; color: white; font-weight: bold; border: none; padding: 10px 15px; margin-top: 10px; }
     </style>
 </head>
 <body>
     <h2>Szókereső Játék</h2>
 
     <div class="controls">
-        <button onclick="changeTime(-10)">⬅️ -10s</button>
+        <button onclick="changeTime(-10)" id="changeTimeButtonMinus">⬅️ -10s</button>
         <span id="timer">60</span> másodperc
-        <button onclick="changeTime(10)">+10s ➡️</button>
+        <button onclick="changeTime(10)" id="changeTimeButtonPlus">+10s ➡️</button>
     </div>
 
-    <button onclick="startGame()">🎮 Kezdés</button>
-
-    <label for="category">Válassz kategóriát:</label>
-    <select id="category" onchange="setCategory()">
-        <option value="animals">Állatok</option>
-        <option value="countries">Országok</option>
-    </select>
+    <button id="startButton" onclick="startGame()">🎮 Kezdés</button>
+    <button id="resetButton" onclick="resetGame()" style="display:none;">Újra Kezdés</button>
+    <button id="newGameButton" onclick="restartGame()">🔄 Új Játék</button>
 
     <label for="difficulty">Válassz nehézségi szintet:</label>
     <select id="difficulty" onchange="setDifficulty()">
         <option value="easy">Könnyű</option>
         <option value="hard">Nehéz</option>
+    </select>
+
+    <label for="category">Válassz kategóriát:</label>
+    <select id="category" onchange="setCategory()">
+        <option value="animals">Állatok</option>
+        <option value="countries">Országok</option>
     </select>
 
     <div class="grid" id="grid"></div>
@@ -62,8 +65,6 @@
 
     <p id="winMessage">🎉Gratulálok, nyertél!🎉</p>
     <p id="loseMessage">😞Sajnálom, nem nyertél!😞</p>
-
-    <button id="restartButton" style="display:none" onclick="restartGame()">Újra Kezdés</button>
 
     <script>
         let timeLeft = 60;
@@ -83,7 +84,16 @@
             document.getElementById("winMessage").style.display = "none";
             document.getElementById("loseMessage").style.display = "none";
             document.getElementById("timer").textContent = timeLeft;
-            document.getElementById("restartButton").style.display = "none";  // Rejtjük az újra kezdés gombot
+            document.getElementById("resetButton").style.display = "inline-block";
+            document.getElementById("startButton").style.display = "none";
+
+            
+            document.getElementById("category").disabled = true;
+            document.getElementById("difficulty").disabled = true;
+
+           
+            document.getElementById("changeTimeButtonMinus").disabled = true; 
+            document.getElementById("changeTimeButtonPlus").disabled = true;
 
             timerInterval = setInterval(() => {
                 timeLeft--;
@@ -91,8 +101,9 @@
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
                     document.getElementById("loseMessage").style.display = "block";
-                    document.getElementById("restartButton").style.display = "inline-block";  // Mutatjuk az újra kezdés gombot
+                    document.getElementById("resetButton").style.display = "inline-block";
                     gameStarted = false;
+                    document.getElementById("startButton").style.display = "inline";
                 }
             }, 1000);
 
@@ -206,17 +217,15 @@
         function selectCell(cell) {
             if (!gameStarted) return;
 
-            // Ha a cella már megtalált szóhoz tartozik, engedjük piros kijelölését
             if (cell.classList.contains("found")) {
                 if (cell.classList.contains("marked")) {
-                    cell.classList.remove("marked");  // Visszavonja a piros jelölést
+                    cell.classList.remove("marked");
                 } else {
-                    cell.classList.add("marked");  // Piros jelölést hozzáadja
+                    cell.classList.add("marked");
                 }
-                return; // Ha csak piros jelölést adunk hozzá, nem szükséges további lépés
+                return;
             }
 
-            // Ha a cella még nincs megtalálva, folytatjuk a szót keresni
             if (selectedCells.includes(cell)) {
                 cell.classList.remove("selected");
                 selectedCells = selectedCells.filter(c => c !== cell);
@@ -229,13 +238,12 @@
             if (foundWord.length > 0) {
                 foundWord.forEach(cell => cell.classList.add("found"));
                 updateWordList();
-                selectedCells = [];  // Töröljük a kijelölt cellákat, hogy új szót kereshetnénk
+                selectedCells = [];
             }
         }
 
         function checkSelectedWord() {
             const selectedText = selectedCells.map(cell => cell.textContent).join("");
-            // Ellenőrizzük, hogy a kijelölt szavak sorrendben vannak-e és azonosak-e a szóval
             const isValid = selectedCells.every((cell, index, array) => 
                 index === 0 || 
                 (Math.abs(cell.dataset.row - array[index - 1].dataset.row) <= 1 && 
@@ -258,25 +266,45 @@
             }
 
             if (foundWords.length === words.length) {
-                clearInterval(timerInterval);  // Megállítja az időzítőt
+                clearInterval(timerInterval);
                 document.getElementById("winMessage").style.display = "block";
-                document.getElementById("restartButton").style.display = "inline-block";  // Mutatjuk az újra kezdés gombot
+                document.getElementById("resetButton").style.display = "inline-block";
             }
         }
 
-        function restartGame() {
+        function resetGame() {
+            
             timeLeft = 60;
             document.getElementById("timer").textContent = timeLeft;
+
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+
+            
             selectedCells = [];
             foundWords = [];
             generateGrid();
-            document.getElementById("restartButton").style.display = "none"; // Rejtjük az újra kezdés gombot
+
+            
             document.getElementById("winMessage").style.display = "none";
             document.getElementById("loseMessage").style.display = "none";
-            startGame();
+
+            
+            document.getElementById("category").disabled = false;
+            document.getElementById("difficulty").disabled = false;
+            document.getElementById("changeTimeButtonMinus").disabled = false;
+            document.getElementById("changeTimeButtonPlus").disabled = false;
+
+            
+            document.getElementById("startButton").style.display = "inline";
+            document.getElementById("resetButton").style.display = "none";
         }
 
-        setDifficulty();
+        function restartGame() {
+            location.reload();
+        }
     </script>
 </body>
 </html>
