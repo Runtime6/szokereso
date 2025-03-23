@@ -55,6 +55,8 @@
     <select id="category" onchange="setCategory()">
         <option value="animals">Állatok</option>
         <option value="countries">Országok</option>
+        <option value="persons">Személyek</option>
+        <option value="planets">Bolygók</option>
     </select>
 
     <div class="grid" id="grid"></div>
@@ -87,11 +89,8 @@
             document.getElementById("resetButton").style.display = "inline-block";
             document.getElementById("startButton").style.display = "none";
 
-            
             document.getElementById("category").disabled = true;
             document.getElementById("difficulty").disabled = true;
-
-           
             document.getElementById("changeTimeButtonMinus").disabled = true; 
             document.getElementById("changeTimeButtonPlus").disabled = true;
 
@@ -118,6 +117,14 @@
             countries: {
                 easy: ["OLASZ", "MALI", "PERU", "KUBA", "IRÁN"],
                 hard: ["BRAZÍLIA", "ARGENTÍNA", "NÉMETORSZÁG", "SPANYOL", "KANADA"]
+            },
+            persons: {
+                easy: ["PUTYIN", "VIKTOR", "FERI", "DAJCS", "JANI"],
+                hard: ["SZEMJONOV", "KÁRPÁTI", "SZILÁGYI", "NAGYBÁNYAI", "RÁKÓCZI"]
+            },
+            planets: {
+                easy: ["MARS", "VÉNUSZ", "FÖLD", "JUPITER", "NEPTUN"],
+                hard: ["MERKÚR", "SZATURNUSZ", "URÁNUSZ", "PLÚTÓ", "CERES"]
             }
         };
 
@@ -127,13 +134,14 @@
         const wordList = document.getElementById("wordList");
         let selectedCells = [];
         let foundWords = [];
+        let usedCells = new Set();  // Nyomon követjük a felhasznált cellákat
 
         function setCategory() {
             const category = document.getElementById("category").value;
             setDifficulty(category);
         }
 
-        function setDifficulty(category = "animals") {
+        function setDifficulty(category = document.getElementById("category").value) {
             const difficulty = document.getElementById("difficulty").value;
             words = wordCategories[category][difficulty];
             gridSize = difficulty === "easy" ? 8 : 12;
@@ -230,13 +238,19 @@
                 cell.classList.remove("selected");
                 selectedCells = selectedCells.filter(c => c !== cell);
             } else {
-                cell.classList.add("selected");
-                selectedCells.push(cell);
+                // Ellenőrizzük, hogy a cella már fel van-e használva egy másik szóban
+                if (!usedCells.has(cell)) {
+                    cell.classList.add("selected");
+                    selectedCells.push(cell);
+                }
             }
 
             const foundWord = checkSelectedWord();
             if (foundWord.length > 0) {
-                foundWord.forEach(cell => cell.classList.add("found"));
+                foundWord.forEach(cell => {
+                    cell.classList.add("found");
+                    usedCells.add(cell);  // A felhasznált cellákat hozzáadjuk a Set-hez
+                });
                 updateWordList();
                 selectedCells = [];
             }
@@ -273,31 +287,23 @@
         }
 
         function resetGame() {
-            
             timeLeft = 60;
             document.getElementById("timer").textContent = timeLeft;
+            if (timerInterval) clearInterval(timerInterval);
 
-            
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-
-            
             selectedCells = [];
             foundWords = [];
+            usedCells.clear();  // Ürítjük a használt cellák listáját
             generateGrid();
 
-            
             document.getElementById("winMessage").style.display = "none";
             document.getElementById("loseMessage").style.display = "none";
 
-            
             document.getElementById("category").disabled = false;
             document.getElementById("difficulty").disabled = false;
             document.getElementById("changeTimeButtonMinus").disabled = false;
             document.getElementById("changeTimeButtonPlus").disabled = false;
 
-            
             document.getElementById("startButton").style.display = "inline";
             document.getElementById("resetButton").style.display = "none";
         }
